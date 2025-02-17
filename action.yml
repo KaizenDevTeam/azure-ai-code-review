@@ -1,0 +1,31 @@
+name: "AI PR Review Action"
+description: "Perform code reviews and comment on diffs using Azure OpenAI API."
+inputs:
+  GITHUB_TOKEN:
+    description: "GitHub token to interact with the repository."
+    required: true
+  AZURE_OPENAI_ENDPOINT:
+    description: "Azure OpenAI endpoint"
+    required: true
+  AZURE_OPENAI_API_KEY:
+    description: "Azure OpenAI API key"
+    required: true
+  AZURE_OPENAI_API_VERSION:
+    description: "Azure OpenAI API version"
+    required: true
+  AZURE_OPENAI_DEPLOYMENT:
+    description: "Azure OpenAI deployment"
+    required: true
+  TEAMS_WEBHOOK_URL:
+    description: "Teams webhook URL"
+    required: true
+  exclude:
+    description: "Glob patterns to exclude files from the diff analysis"
+    required: false
+    default: ""
+runs:
+  using: "node16"
+  main: "dist/index.js"
+branding:
+  icon: "aperture"
+  color: "green"
