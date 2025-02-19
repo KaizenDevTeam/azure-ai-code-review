@@ -171,14 +171,7 @@ function createComment(
     return {
       body: aiResponse.reviewComment,
       path: file.to,
-      line: lineNumber,
-      start_line: chunk.oldStart,
-      start_side: 'RIGHT',
-      side: 'RIGHT',
-      diff_hunk: chunk.content + '\n' + chunk.changes
-        // @ts-expect-error - ln and ln2 exists where needed
-        .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
-        .join('\n')
+      line: lineNumber
     };
   });
 }
@@ -187,15 +180,7 @@ async function createReviewComment(
   owner: string,
   repo: string,
   pull_number: number,
-  comments: Array<{ 
-    body: string; 
-    path: string; 
-    line: number;
-    start_line: number;
-    start_side: string;
-    side: string;
-    diff_hunk: string;
-  }>
+  comments: Array<{ body: string; path: string; line: number }>
 ): Promise<void> {
   await octokit.pulls.createReview({
     owner,
@@ -305,6 +290,11 @@ async function main() {
     .map((s) => s.trim());
 
   const filteredDiff = parsedDiff.filter((file) => {
+    // Ignore .lock files
+    if (file.to?.endsWith('.lock')) {
+      return false;
+    }
+    
     return !excludePatterns.some((pattern) =>
       minimatch(file.to ?? '', pattern)
     );
@@ -316,13 +306,7 @@ async function main() {
       prDetails.owner,
       prDetails.repo,
       prDetails.pull_number,
-      comments.map(comment => ({
-        ...comment,
-        start_line: comment.line,
-        start_side: 'RIGHT',
-        side: 'RIGHT',
-        diff_hunk: ''
-      }))
+      comments
     );
     
     // Send Teams message with the comments

@@ -183,14 +183,7 @@ function createComment(file, chunk, aiResponses) {
         return {
             body: aiResponse.reviewComment,
             path: file.to,
-            line: lineNumber,
-            start_line: chunk.oldStart,
-            start_side: 'RIGHT',
-            side: 'RIGHT',
-            diff_hunk: chunk.content + '\n' + chunk.changes
-                // @ts-expect-error - ln and ln2 exists where needed
-                .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
-                .join('\n')
+            line: lineNumber
         };
     });
 }
@@ -293,11 +286,16 @@ function main() {
             .split(',')
             .map((s) => s.trim());
         const filteredDiff = parsedDiff.filter((file) => {
+            var _a;
+            // Ignore .lock files
+            if ((_a = file.to) === null || _a === void 0 ? void 0 : _a.endsWith('.lock')) {
+                return false;
+            }
             return !excludePatterns.some((pattern) => { var _a; return (0, minimatch_1.default)((_a = file.to) !== null && _a !== void 0 ? _a : '', pattern); });
         });
         const comments = yield analyzeCode(filteredDiff, prDetails);
         if (comments.length > 0) {
-            yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments.map(comment => (Object.assign(Object.assign({}, comment), { start_line: comment.line, start_side: 'RIGHT', side: 'RIGHT', diff_hunk: '' }))));
+            yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
             // Send Teams message with the comments
             yield sendTeamsMessage(prDetails, comments);
         }
