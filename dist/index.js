@@ -245,6 +245,8 @@ function main() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
+        // Print the prDetails
+        console.log("PR Details:", prDetails);
         let diff;
         const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : '', 'utf8'));
         if (eventData.action === 'opened') {
@@ -280,7 +282,9 @@ function main() {
         const filteredDiff = parsedDiff.filter((file) => {
             return !excludePatterns.some((pattern) => { var _a; return (0, minimatch_1.default)((_a = file.to) !== null && _a !== void 0 ? _a : '', pattern); });
         });
+        console.log("Filtered Diff:", JSON.stringify(filteredDiff));
         const comments = yield analyzeCode(filteredDiff, prDetails);
+        console.log("Comments:", JSON.stringify(comments));
         if (comments.length > 0) {
             yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
             // Send Teams message with the comments

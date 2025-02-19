@@ -234,6 +234,10 @@ async function sendTeamsMessage(prDetails: PRDetails, comments: Array<{ body: st
 
 async function main() {
   const prDetails = await getPRDetails();
+
+  // Print the prDetails
+  console.log("PR Details:", prDetails);
+
   let diff: string | null;
   const eventData = JSON.parse(
     readFileSync(process.env.GITHUB_EVENT_PATH ?? '', 'utf8')
@@ -283,7 +287,11 @@ async function main() {
     );
   });
 
+  console.log("Filtered Diff:", JSON.stringify(filteredDiff));
+
   const comments = await analyzeCode(filteredDiff, prDetails);
+  console.log("Comments:", JSON.stringify(comments));
+
   if (comments.length > 0) {
     await createReviewComment(
       prDetails.owner,
