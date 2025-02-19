@@ -156,22 +156,10 @@ function createComment(
     if (!file.to) {
       return [];
     }
-
-    // Find the specific change in the chunk that matches the line number
-    const lineNumber = Number(aiResponse.lineNumber);
-    const change = chunk.changes.find(c => 
-      // @ts-expect-error - ln and ln2 exists where needed
-      (c.ln === lineNumber || c.ln2 === lineNumber)
-    );
-
-    if (!change) {
-      return [];
-    }
-
     return {
       body: aiResponse.reviewComment,
       path: file.to,
-      line: lineNumber
+      line: Number(aiResponse.lineNumber),
     };
   });
 }
@@ -290,11 +278,6 @@ async function main() {
     .map((s) => s.trim());
 
   const filteredDiff = parsedDiff.filter((file) => {
-    // Ignore .lock files
-    if (file.to?.endsWith('.lock')) {
-      return false;
-    }
-    
     return !excludePatterns.some((pattern) =>
       minimatch(file.to ?? '', pattern)
     );
