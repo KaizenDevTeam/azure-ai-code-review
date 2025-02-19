@@ -172,10 +172,25 @@ function createComment(file, chunk, aiResponses) {
         if (!file.to) {
             return [];
         }
+        // Find the specific change in the chunk that matches the line number
+        const lineNumber = Number(aiResponse.lineNumber);
+        const change = chunk.changes.find(c => 
+        // @ts-expect-error - ln and ln2 exists where needed
+        (c.ln === lineNumber || c.ln2 === lineNumber));
+        if (!change) {
+            return [];
+        }
         return {
             body: aiResponse.reviewComment,
             path: file.to,
-            line: Number(aiResponse.lineNumber),
+            line: lineNumber,
+            start_line: chunk.oldStart,
+            start_side: 'RIGHT',
+            side: 'RIGHT',
+            diff_hunk: chunk.content + '\n' + chunk.changes
+                // @ts-expect-error - ln and ln2 exists where needed
+                .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
+                .join('\n')
         };
     });
 }
@@ -282,7 +297,7 @@ function main() {
         });
         const comments = yield analyzeCode(filteredDiff, prDetails);
         if (comments.length > 0) {
-            yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
+            yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments.map(comment => (Object.assign(Object.assign({}, comment), { start_line: comment.line, start_side: 'RIGHT', side: 'RIGHT', diff_hunk: '' }))));
             // Send Teams message with the comments
             yield sendTeamsMessage(prDetails, comments);
         }

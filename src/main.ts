@@ -156,10 +156,29 @@ function createComment(
     if (!file.to) {
       return [];
     }
+
+    // Find the specific change in the chunk that matches the line number
+    const lineNumber = Number(aiResponse.lineNumber);
+    const change = chunk.changes.find(c => 
+      // @ts-expect-error - ln and ln2 exists where needed
+      (c.ln === lineNumber || c.ln2 === lineNumber)
+    );
+
+    if (!change) {
+      return [];
+    }
+
     return {
       body: aiResponse.reviewComment,
       path: file.to,
-      line: Number(aiResponse.lineNumber),
+      line: lineNumber,
+      start_line: chunk.oldStart,
+      start_side: 'RIGHT',
+      side: 'RIGHT',
+      diff_hunk: chunk.content + '\n' + chunk.changes
+        // @ts-expect-error - ln and ln2 exists where needed
+        .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
+        .join('\n')
     };
   });
 }
@@ -168,7 +187,15 @@ async function createReviewComment(
   owner: string,
   repo: string,
   pull_number: number,
-  comments: Array<{ body: string; path: string; line: number }>
+  comments: Array<{ 
+    body: string; 
+    path: string; 
+    line: number;
+    start_line: number;
+    start_side: string;
+    side: string;
+    diff_hunk: string;
+  }>
 ): Promise<void> {
   await octokit.pulls.createReview({
     owner,
@@ -289,7 +316,13 @@ async function main() {
       prDetails.owner,
       prDetails.repo,
       prDetails.pull_number,
-      comments
+      comments.map(comment => ({
+        ...comment,
+        start_line: comment.line,
+        start_side: 'RIGHT',
+        side: 'RIGHT',
+        diff_hunk: ''
+      }))
     );
     
     // Send Teams message with the comments
