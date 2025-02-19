@@ -243,6 +243,8 @@ async function main() {
     readFileSync(process.env.GITHUB_EVENT_PATH ?? '', 'utf8')
   );
 
+  console.log("Event Data:", eventData.action);
+
   if (eventData.action === 'opened') {
     diff = await getDiff(
       prDetails.owner,
@@ -252,6 +254,9 @@ async function main() {
   } else if (eventData.action === 'synchronize') {
     const newBaseSha = eventData.before;
     const newHeadSha = eventData.after;
+
+    console.log("New Base SHA:", newBaseSha);
+    console.log("New Head SHA:", newHeadSha);
 
     const response = await octokit.repos.compareCommits({
       headers: {
